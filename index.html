@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Simple Memory Game</title>
+<style>
+body{
+text-align: center;
+font-family: arial;
+}
+.button{
+margin:20px;
+font-size:16px;
+font-weight: bold;
+padding:5px 10px;
+}
+.text-primary {
+  color: #428bca;
+}
+.text-primary:hover {
+  color: #3071a9;
+}
+.text-success {
+  color: #3c763d;
+}
+.text-warning {
+  color: #8a6d3b;
+}
+.text-danger {
+  color: #a94442;
+}
+.text-danger:hover {
+  color: #843534;
+}
+.primediv
+{
+	border:1px solid #3071a9;
+	width:400px;
+	margin-left:36%;
+	cursor:pointer;
+	display:none;
+	text-align: left;
+	padding:18px 18px 19px 129px;
+}
+</style>
+</head>
+<body>
+<h2 class="text-primary">Simple Memory Game</h2>
+<br/>
+<div id="resultdiv" style="display:none;"></div><span class="text-danger" style="margin-left:82%">Clicks:&nbsp;<span id="cntspan" >0</span></span>&nbsp;&nbsp;&nbsp;<a href="javascript:void(0)" onclick="LoadTilesHere('restart')">Restart</a>
+<div id="imagediv" align="center" class="primediv" ></div>
+
+<script language="javascript" type="text/javascript" src="jquery-2.1.0.min.js">
+</script>
+
+<script>
+var AllImgArr=new Array();
+var FlippedImgArr=new Array();
+var FlippedImgArrAsString;
+var CollectingAllMatchedTiles=new Array();
+var AllPhrasesArr=new Array();
+var Tile1;
+var rndomnum;
+var json;
+var ClickCounter=0;
+
+function Tile(phrase){			////Not used
+	this.phrase = phrase;
+	this.getPhrase = function() {
+		return '<span>' + this.phrase + '</span>';
+	};
+}
+
+function LetsCheckWhatWeGot(imgval){
+	FlippedImgArrAsString=FlippedImgArr.toString();
+	if(FlippedImgArr.length==2 && (FlippedImgArr[0] == FlippedImgArr[1]))
+	{
+			CollectingAllMatchedTiles.push(FlippedImgArr[0]);
+			if(CollectingAllMatchedTiles.length>0){
+				CollectingAllMatchedTiles.forEach(function(value){
+					$("img[src='"+value+"']").remove();
+				})
+			}
+			$('#resultdiv').html('<b class="text-success">Matched Tiles Removed</b>');
+			$('#resultdiv').fadeIn();
+			$('#resultdiv').fadeOut(1500);
+			if(CollectingAllMatchedTiles.length==rndomnum){
+				$('#imagediv').html('Good Job!!!<br><br><input type="button" value="Play Again" onclick="LoadTilesHere()" />');
+			}
+	}
+	else if(FlippedImgArr.length==2 && (FlippedImgArr[0] != FlippedImgArr[1])){
+			//alert('Resetting all the tiles')
+			$('#resultdiv').html('<span class="text-warning">Tiles do not match! Try!</span>');
+			$('#resultdiv').fadeIn();
+			$('#resultdiv').fadeOut(1000);
+			$("img").attr("src","images/tile.png").fadeIn(10000);
+	}
+	if(FlippedImgArr.length==2)
+	{
+		while(FlippedImgArr.length) {
+		FlippedImgArr.pop();
+		}
+	}
+}
+
+function pushToFlipped(imgval){
+	//alert('in pushToFlipped  '+imgval);
+	ClickCounter++;
+	$('#cntspan').html(ClickCounter);
+	FlippedImgArr.push(imgval)
+	LetsCheckWhatWeGot(imgval);
+}
+$(document).ready(function() {
+		//start ajax request
+		$.ajax({
+			url: "words.json",
+			dataType: "json",
+			success: function(data) {
+			json = data;
+			LoadTilesHere();
+		}
+	});
+});
+	
+function LoadTilesHere(restart){
+	$('#imagediv').html('');
+	AllImgArr=[];
+	CollectingAllMatchedTiles=[];
+	ClickCounter=0;
+	$('#cntspan').html(ClickCounter);
+	var min=6;
+	var max=12;
+	if(restart!='restart'){
+		rndomnum=Math.floor(Math.random() * (max - min + 1) + min);
+	}
+	var y=1;
+	$.each( json.data, function( key, val ) {
+			if(y<=rndomnum){
+				AllImgArr.push(val.image)
+			}
+			y++;
+	});
+	var x=0;
+	$.each(AllImgArr, function( key, val ) {
+			if(x%3===0){
+				$("<br/>").appendTo('#imagediv');
+			}
+			$('<img/>', {
+				id:x,
+				src:'images/tile.png',
+				width:'90px',
+				height:'120px',
+				title:'Tap to reveal image',
+				click:function( e ){
+					if($(this).attr("src")!='images/tile.png'){
+						return false;
+					}
+
+					$(this).fadeOut(400, function(){
+						$(this).attr("src",val);
+					}).fadeIn(700);
+
+					setTimeout(function(){
+						pushToFlipped(val)
+					},1100);
+				}
+			}).appendTo('#imagediv');		
+			x++;
+		});
+
+	$.each( AllImgArr, function( key, val ) {
+			if(x%3===0){
+				$("<br/>").appendTo('#imagediv');
+			}
+				$('<img/>', {
+				id:x,
+				src:'images/tile.png',
+				width:'90px',
+				height:'120px',
+				title:'change to ' + val,
+				click:function( e ){
+				
+				$(this).fadeOut(400, function() {
+					$(this).attr("src",val);
+				}).fadeIn(700);
+
+				setTimeout(function(){
+					pushToFlipped(val)
+				},1100);}
+				}).appendTo('#imagediv');
+			x++;
+	});
+		$('#imagediv').slideDown('slow');
+}
+			
+</script>
+</body>
+</html>
